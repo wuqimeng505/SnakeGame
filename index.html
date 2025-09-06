@@ -39,11 +39,40 @@
             justify-content: center;
         }
 
+        /* 得分和按钮容器 */
+        .score-and-buttons {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+        }
+
         /* 得分显示 */
-        .score {
-            font-size: 1.2em;
+        .score-display {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #FF9800, #F57C00);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(255, 152, 0, 0.3);
+            min-width: 120px;
+            text-align: center;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            height: 48px; /* 与按钮高度一致 */
+        }
+
+        .score-text {
+            font-size: 1em;
             font-weight: bold;
-            color: #333;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .score-text span {
+            font-size: 1.2em;
+            margin-left: 5px;
         }
 
         /* 速度控制 */
@@ -96,15 +125,28 @@
             min-width: 60px;
         }
 
+        /* 游戏按钮容器 */
+        .game-buttons {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
         /* 游戏按钮 */
         .game-button {
-            padding: 10px 20px;
+            padding: 12px 24px;
             font-size: 1em;
             border: none;
-            border-radius: 5px;
+            border-radius: 8px;
             cursor: pointer;
             font-weight: bold;
-            transition: background-color 0.3s;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            height: 48px; /* 与得分显示高度一致 */
+            min-width: 120px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
         .start-button {
@@ -167,19 +209,44 @@
 
         /* 操作说明 */
         .instructions {
-            margin-top: 20px;
-            text-align: center;
-            color: #666;
-            max-width: 500px;
+            margin-top: 30px;
+            text-align: left;
+            color: #555;
+            max-width: 600px;
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
         }
 
         .instructions h3 {
-            margin-bottom: 10px;
+            margin-bottom: 20px;
             color: #333;
+            text-align: center;
+            font-size: 1.3em;
+            border-bottom: 2px solid #4CAF50;
+            padding-bottom: 10px;
         }
 
-        .instructions p {
-            margin-bottom: 5px;
+        .instruction-section {
+            margin-bottom: 20px;
+        }
+
+        .instruction-section h4 {
+            color: #4CAF50;
+            margin-bottom: 10px;
+            font-size: 1.1em;
+            font-weight: bold;
+        }
+
+        .instruction-section p {
+            margin-bottom: 8px;
+            line-height: 1.5;
+            padding-left: 10px;
+        }
+
+        .instruction-section p strong {
+            color: #333;
         }
 
         /* 手机端适配 */
@@ -192,20 +259,43 @@
             .game-controls {
                 gap: 15px;
                 margin-bottom: 15px;
+                flex-direction: column;
             }
 
-            .score {
-                font-size: 1.1em;
+            .score-and-buttons {
+                flex-direction: column;
+                gap: 10px;
+                width: 100%;
+            }
+
+            .score-display {
+                padding: 10px 16px;
+                min-width: 100px;
+                width: 100%;
+                max-width: 200px;
+            }
+
+            .game-buttons {
+                width: 100%;
+                justify-content: center;
             }
 
             .game-button {
-                padding: 8px 16px;
+                padding: 10px 20px;
                 font-size: 0.9em;
+                width: 100%;
+                max-width: 200px;
             }
 
             .instructions {
                 font-size: 0.9em;
-                margin-top: 15px;
+                margin-top: 20px;
+                padding: 15px;
+                max-width: 100%;
+            }
+
+            .instruction-section p {
+                padding-left: 5px;
             }
         }
     </style>
@@ -216,9 +306,6 @@
 
     <!-- 游戏控制面板 -->
     <div class="game-controls">
-        <!-- 得分显示 -->
-        <div class="score">得分: <span id="scoreValue">0</span></div>
-
         <!-- 速度控制 -->
         <div class="speed-control">
             <label for="speedSlider">速度:</label>
@@ -226,9 +313,16 @@
             <span id="speedDisplay" class="speed-display">中速</span>
         </div>
 
-        <!-- 游戏控制按钮 -->
-        <button id="startButton" class="game-button start-button">开始游戏</button>
-        <button id="pauseButton" class="game-button pause-button" style="display: none;">暂停</button>
+        <!-- 得分和游戏控制按钮 -->
+        <div class="score-and-buttons">
+            <div class="score-display">
+                <span class="score-text">得分: <span id="scoreValue">0</span></span>
+            </div>
+            <div class="game-buttons">
+                <button id="startButton" class="game-button start-button">开始游戏</button>
+                <button id="pauseButton" class="game-button pause-button" style="display: none;">暂停</button>
+            </div>
+        </div>
     </div>
 
     <!-- 游戏区域 -->
@@ -246,10 +340,32 @@
 
     <!-- 操作说明 -->
     <div class="instructions">
-        <h3>操作说明</h3>
-        <p id="pcInstructions">电脑端: 使用方向键 ↑↓←→ 控制蛇的移动</p>
-        <p id="mobileInstructions" style="display: none;">手机端: 在游戏区域内滑动手指控制方向</p>
-        <p>吃到红色食物可以增长身体和得分，避免撞墙和撞到自己！</p>
+        <h3>🎮 操作说明</h3>
+        <div class="instruction-section">
+            <h4>控制方式</h4>
+            <p>💻 <strong>电脑端</strong>: 使用方向键 ↑↓←→ 控制蛇的移动</p>
+            <p>📱 <strong>移动端</strong>: 在游戏区域内滑动手指控制方向</p>
+            <p style="margin-left: 20px; font-size: 0.9em; color: #666;">
+                • 向上滑动：蛇向上移动<br>
+                • 向下滑动：蛇向下移动<br>
+                • 向左滑动：蛇向左移动<br>
+                • 向右滑动：蛇向右移动
+            </p>
+        </div>
+        
+        <div class="instruction-section">
+            <h4>游戏规则</h4>
+            <p>🍎 吃到红色食物可以增长身体和得分</p>
+            <p>🚫 避免撞到自己的身体</p>
+            <p>🧱 蛇头可以到达边界，但不能穿过墙壁</p>
+            <p>⚡ 不能反向移动（防止意外后退）</p>
+        </div>
+        
+        <div class="instruction-section">
+            <h4>游戏设置</h4>
+            <p>🎚️ 速度调节：游戏开始前可调整，游戏中被锁定</p>
+            <p>⏸️ 暂停功能：游戏进行中可随时暂停/继续</p>
+        </div>
     </div>
 
     <script>
@@ -283,20 +399,9 @@
         let food = {}; // 食物位置
         let lastMoveTime = 0; // 上次移动的时间，用于防止过快按键
 
-        // 检测设备类型并显示对应说明
+        // 检测设备类型
         function detectDevice() {
             const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-            const pcInstructions = document.getElementById('pcInstructions');
-            const mobileInstructions = document.getElementById('mobileInstructions');
-            
-            if (isMobile) {
-                pcInstructions.style.display = 'none';
-                mobileInstructions.style.display = 'block';
-            } else {
-                pcInstructions.style.display = 'block';
-                mobileInstructions.style.display = 'none';
-            }
-            
             return isMobile;
         }
 
