@@ -65,7 +65,8 @@
             background: #ddd;
             outline: none;
             cursor: pointer;
-            -webkit-appearance: none;
+            -webkit-appearance: none; /* 这行是给苹果浏览器用的 */
+            appearance: none; /* 这行是给所有现代浏览器用的 */
         }
 
         .speed-slider::-webkit-slider-thumb {
@@ -469,17 +470,17 @@
         function updateGameSpeed() {
             const speedValue = parseInt(speedSlider.value);
             
-            // 速度范围：1-10，对应游戏速度从900毫秒到90毫秒
-            // 最慢速度是原来慢速的1/3，即900毫秒（原来慢速是300毫秒）
-            gameSpeed = 1000 - (speedValue * 90); // 1000-90=910, 1000-900=100
+            // 速度范围：1-10，对应游戏速度从300毫秒到50毫秒
+            // 计算公式：300 - (speedValue - 1) * 25 = 300 - speedValue*25 + 25 = 325 - speedValue*25
+            gameSpeed = 325 - (speedValue * 25);
             
-            // 更新速度显示文字
+            // 更新速度显示文字和具体数值
             if (speedValue <= 3) {
-                speedDisplay.textContent = '慢速';
+                speedDisplay.textContent = `慢速 (${gameSpeed}ms)`;
             } else if (speedValue <= 7) {
-                speedDisplay.textContent = '中速';
+                speedDisplay.textContent = `中速 (${gameSpeed}ms)`;
             } else {
-                speedDisplay.textContent = '快速';
+                speedDisplay.textContent = `快速 (${gameSpeed}ms)`;
             }
             
             // 如果游戏正在运行，重新设置定时器
