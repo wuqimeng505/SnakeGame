@@ -22,6 +22,29 @@
             padding: 10px;
         }
 
+        /* 静音按钮 */
+        .mute-button {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(255, 255, 255, 0.9);
+            border: 2px solid #ddd;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            font-size: 1.5em;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            z-index: 1000;
+        }
+
+        .mute-button:hover {
+            background: rgba(255, 255, 255, 1);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+            transform: scale(1.1);
+        }
+
         /* 游戏标题 */
         h1 {
             color: #333;
@@ -301,6 +324,9 @@
     </style>
 </head>
 <body>
+    <!-- 静音按钮 -->
+    <button id="muteButton" class="mute-button" onclick="toggleMute()" title="关闭音效">🔊</button>
+    
     <!-- 游戏标题 -->
     <h1>🐍 贪吃蛇游戏</h1>
 
@@ -388,6 +414,7 @@
         // 游戏状态
         let gameRunning = false; // 游戏是否正在运行
         let gamePaused = false; // 游戏是否暂停
+        let waitingForInput = false; // 是否等待用户首次输入
         let score = 0; // 当前得分
         let gameSpeed = 200; // 游戏速度（毫秒）
 
@@ -398,6 +425,72 @@
         let direction = {x: 0, y: 0}; // 蛇的移动方向
         let food = {}; // 食物位置
         let lastMoveTime = 0; // 上次移动的时间，用于防止过快按键
+        
+        // 音效系统
+        let audioContext;
+        let isMuted = false;
+
+        // 初始化音效系统
+        function initAudio() {
+            try {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            } catch (e) {
+                console.log('音效系统不支持');
+            }
+        }
+
+        // 播放得分音效
+        function playScoreSound() {
+            if (isMuted || !audioContext) return;
+            
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            
+            // 创建愉快的得分音效 (C-E-G 和弦)
+            oscillator.frequency.setValueAtTime(523.25, audioContext.currentTime); // C5
+            oscillator.frequency.setValueAtTime(659.25, audioContext.currentTime + 0.1); // E5
+            oscillator.frequency.setValueAtTime(783.99, audioContext.currentTime + 0.2); // G5
+            
+            gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
+            
+            oscillator.type = 'sine';
+            oscillator.start(audioContext.currentTime);
+            oscillator.stop(audioContext.currentTime + 0.3);
+        }
+
+        // 播放游戏结束音效
+        function playGameOverSound() {
+            if (isMuted || !audioContext) return;
+            
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            
+            // 创建失败音效 (下降音调)
+            oscillator.frequency.setValueAtTime(440, audioContext.currentTime); // A4
+            oscillator.frequency.exponentialRampToValueAtTime(220, audioContext.currentTime + 0.5); // A3
+            
+            gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
+            
+            oscillator.type = 'sawtooth';
+            oscillator.start(audioContext.currentTime);
+            oscillator.stop(audioContext.currentTime + 0.5);
+        }
+
+        // 切换静音状态
+        function toggleMute() {
+            isMuted = !isMuted;
+            const muteButton = document.getElementById('muteButton');
+            muteButton.textContent = isMuted ? '🔇' : '🔊';
+            muteButton.title = isMuted ? '开启音效' : '关闭音效';
+        }
 
         // 检测设备类型
         function detectDevice() {
@@ -503,6 +596,11 @@
                 return;
             }
             
+            // 如果正在等待用户首次输入，不移动
+            if (waitingForInput) {
+                return;
+            }
+            
             // 更新网格数量，确保与当前canvas尺寸匹配
             gridCount = canvas.width / gridSize;
             
@@ -545,6 +643,8 @@
                 // 吃到食物，增加得分
                 score++;
                 scoreElement.textContent = score;
+                // 播放得分音效
+                playScoreSound();
                 // 生成新的食物
                 generateFood();
             } else {
@@ -559,7 +659,11 @@
             finalScoreElement.textContent = score;
             gameOverElement.style.display = 'block';
             startButton.style.display = 'inline-block';
+            startButton.textContent = '开始游戏'; // 确保按钮文本正确
             pauseButton.style.display = 'none';
+            
+            // 播放游戏结束音效
+            playGameOverSound();
             
             // 游戏结束后重新启用速度滑杆
             speedSlider.disabled = false;
@@ -575,8 +679,25 @@
             scoreElement.textContent = score;
             gameOverElement.style.display = 'none';
             clearInterval(gameInterval); // 清除之前的定时器
+            
+            // 重置所有游戏状态
+            gameRunning = false;
+            gamePaused = false;
+            waitingForInput = false; // 重置等待输入状态
+            
+            // 显示开始按钮，隐藏暂停按钮
+            startButton.style.display = 'inline-block';
+            startButton.textContent = '开始游戏'; // 确保按钮文本正确
+            pauseButton.style.display = 'none';
+            
+            // 重新启用速度滑杆
+            speedSlider.disabled = false;
+            speedSlider.style.opacity = '1';
+            speedSlider.style.cursor = 'pointer';
+            
             generateFood();
             draw();
+            console.log('游戏已重置，可以调整速度设置');
         }
 
         // 游戏主循环
@@ -593,12 +714,14 @@
         function startGame() {
             if (gameRunning && !gamePaused) return;
             
-            if (!gameRunning) {
-                resetGame();
+            // 初始化音效系统（需要用户交互才能启动）
+            if (!audioContext) {
+                initAudio();
             }
             
             gameRunning = true;
             gamePaused = false;
+            waitingForInput = true; // 等待用户首次输入
             startButton.style.display = 'none';
             pauseButton.style.display = 'inline-block';
             
@@ -613,7 +736,7 @@
             // 确保清除任何可能存在的旧定时器，然后开始新的游戏循环
             clearInterval(gameInterval);
             gameInterval = setInterval(gameLoop, gameSpeed);
-            console.log(`游戏开始，速度: ${Math.round(gameSpeed)}ms`);
+            console.log(`游戏准备就绪，等待首次方向操作，速度: ${Math.round(gameSpeed)}ms`);
         }
 
         // 暂停游戏
@@ -639,24 +762,24 @@
         function updateGameSpeed() {
             const speedValue = parseInt(speedSlider.value);
             
-            // 速度范围：1-9档，对应游戏速度从1000毫秒到100毫秒
-            // 每档之间相差112.5毫秒，让速度变化更平缓
-            // 计算公式：1000 - (speedValue - 1) * 112.5
-            // 1档=1000ms, 2档=887.5ms, 3档=775ms, ..., 9档=100ms
-            gameSpeed = 1000 - (speedValue - 1) * 112.5;
+            // 速度范围：1-9档，对应游戏速度从900毫秒到100毫秒
+            // 每档减少100毫秒，速度变化更直观
+            // 计算公式：900 - (speedValue - 1) * 100
+            // 1档=900ms, 2档=800ms, 3档=700ms, 4档=600ms, 5档=500ms, 6档=400ms, 7档=300ms, 8档=200ms, 9档=100ms
+            gameSpeed = 900 - (speedValue - 1) * 100;
             
             // 更新速度显示文字和具体数值
             // 重新划分速度档位，让新手更容易理解
             if (speedValue <= 2) {
-                speedDisplay.textContent = `很慢 (${Math.round(gameSpeed)}ms)`;
+                speedDisplay.textContent = `很慢 (${gameSpeed}ms)`;
             } else if (speedValue <= 4) {
-                speedDisplay.textContent = `慢速 (${Math.round(gameSpeed)}ms)`;
+                speedDisplay.textContent = `慢速 (${gameSpeed}ms)`;
             } else if (speedValue <= 6) {
-                speedDisplay.textContent = `中速 (${Math.round(gameSpeed)}ms)`;
+                speedDisplay.textContent = `中速 (${gameSpeed}ms)`;
             } else if (speedValue <= 8) {
-                speedDisplay.textContent = `快速 (${Math.round(gameSpeed)}ms)`;
+                speedDisplay.textContent = `快速 (${gameSpeed}ms)`;
             } else {
-                speedDisplay.textContent = `很快 (${Math.round(gameSpeed)}ms)`;
+                speedDisplay.textContent = `很快 (${gameSpeed}ms)`;
             }
             
             // 如果游戏正在运行，重新设置定时器
@@ -671,7 +794,7 @@
         // 绑定按钮事件
         startButton.addEventListener('click', startGame);
         pauseButton.addEventListener('click', pauseGame);
-        restartButton.addEventListener('click', startGame);
+        restartButton.addEventListener('click', resetGame);
         speedSlider.addEventListener('input', updateGameSpeed);
 
         // 键盘控制（电脑端）
@@ -698,6 +821,11 @@
                     if (snake.length === 1 || direction.y !== 1) {
                         direction = {x: 0, y: -1};
                         console.log('方向改变：向上');
+                        // 如果是首次输入，开始移动
+                        if (waitingForInput) {
+                            waitingForInput = false;
+                            console.log('首次方向操作，蛇开始移动');
+                        }
                     } else {
                         console.log('禁止反向移动：当前向下，不能向上');
                     }
@@ -707,6 +835,11 @@
                     if (snake.length === 1 || direction.y !== -1) {
                         direction = {x: 0, y: 1};
                         console.log('方向改变：向下');
+                        // 如果是首次输入，开始移动
+                        if (waitingForInput) {
+                            waitingForInput = false;
+                            console.log('首次方向操作，蛇开始移动');
+                        }
                     } else {
                         console.log('禁止反向移动：当前向上，不能向下');
                     }
@@ -716,6 +849,11 @@
                     if (snake.length === 1 || direction.x !== 1) {
                         direction = {x: -1, y: 0};
                         console.log('方向改变：向左');
+                        // 如果是首次输入，开始移动
+                        if (waitingForInput) {
+                            waitingForInput = false;
+                            console.log('首次方向操作，蛇开始移动');
+                        }
                     } else {
                         console.log('禁止反向移动：当前向右，不能向左');
                     }
@@ -725,6 +863,11 @@
                     if (snake.length === 1 || direction.x !== -1) {
                         direction = {x: 1, y: 0};
                         console.log('方向改变：向右');
+                        // 如果是首次输入，开始移动
+                        if (waitingForInput) {
+                            waitingForInput = false;
+                            console.log('首次方向操作，蛇开始移动');
+                        }
                     } else {
                         console.log('禁止反向移动：当前向左，不能向右');
                     }
@@ -773,6 +916,11 @@
                         if (snake.length === 1 || direction.x !== -1) {
                             direction = {x: 1, y: 0};
                             console.log('触屏方向改变：向右');
+                            // 如果是首次输入，开始移动
+                            if (waitingForInput) {
+                                waitingForInput = false;
+                                console.log('首次方向操作，蛇开始移动');
+                            }
                         } else {
                             console.log('禁止反向移动：当前向左，不能向右');
                         }
@@ -781,6 +929,11 @@
                         if (snake.length === 1 || direction.x !== 1) {
                             direction = {x: -1, y: 0};
                             console.log('触屏方向改变：向左');
+                            // 如果是首次输入，开始移动
+                            if (waitingForInput) {
+                                waitingForInput = false;
+                                console.log('首次方向操作，蛇开始移动');
+                            }
                         } else {
                             console.log('禁止反向移动：当前向右，不能向左');
                         }
@@ -794,6 +947,11 @@
                         if (snake.length === 1 || direction.y !== -1) {
                             direction = {x: 0, y: 1};
                             console.log('触屏方向改变：向下');
+                            // 如果是首次输入，开始移动
+                            if (waitingForInput) {
+                                waitingForInput = false;
+                                console.log('首次方向操作，蛇开始移动');
+                            }
                         } else {
                             console.log('禁止反向移动：当前向上，不能向下');
                         }
@@ -802,6 +960,11 @@
                         if (snake.length === 1 || direction.y !== 1) {
                             direction = {x: 0, y: -1};
                             console.log('触屏方向改变：向上');
+                            // 如果是首次输入，开始移动
+                            if (waitingForInput) {
+                                waitingForInput = false;
+                                console.log('首次方向操作，蛇开始移动');
+                            }
                         } else {
                             console.log('禁止反向移动：当前向下，不能向上');
                         }
@@ -817,7 +980,25 @@
 
         // 初始化游戏
         function initGame() {
-            resetGame();
+            // 初始化游戏状态
+            snake = [{x: 10, y: 10}];
+            direction = {x: 0, y: 0};
+            score = 0;
+            scoreElement.textContent = score;
+            gameRunning = false;
+            gamePaused = false;
+            waitingForInput = false; // 初始化等待输入状态
+            
+            // 确保按钮状态正确
+            startButton.style.display = 'inline-block';
+            startButton.textContent = '开始游戏'; // 确保按钮文本正确
+            pauseButton.style.display = 'none';
+            gameOverElement.style.display = 'none';
+            
+            // 确保速度滑杆可用
+            speedSlider.disabled = false;
+            speedSlider.style.opacity = '1';
+            speedSlider.style.cursor = 'pointer';
             
             // 初始化速度显示
             updateGameSpeed();
@@ -832,7 +1013,9 @@
                 canvas.height = canvasSize;
             }
             
+            generateFood();
             draw();
+            console.log('游戏初始化完成，可以调整速度设置');
         }
 
         // 页面加载完成后初始化游戏
