@@ -222,7 +222,7 @@
         <!-- 速度控制 -->
         <div class="speed-control">
             <label for="speedSlider">速度:</label>
-            <input type="range" id="speedSlider" class="speed-slider" min="1" max="10" value="5">
+            <input type="range" id="speedSlider" class="speed-slider" min="1" max="9" value="5">
             <span id="speedDisplay" class="speed-display">中速</span>
         </div>
 
@@ -267,7 +267,7 @@
 
         // 游戏设置
         const gridSize = 20; // 每个格子的大小（像素）
-        const gridCount = canvas.width / gridSize; // 网格数量
+        let gridCount = canvas.width / gridSize; // 网格数量（动态计算）
 
         // 游戏状态
         let gameRunning = false; // 游戏是否正在运行
@@ -281,6 +281,7 @@
         ];
         let direction = {x: 0, y: 0}; // 蛇的移动方向
         let food = {}; // 食物位置
+        let lastMoveTime = 0; // 上次移动的时间，用于防止过快按键
 
         // 检测设备类型并显示对应说明
         function detectDevice() {
@@ -304,8 +305,37 @@
             detectDevice();
         });
 
+        // 绘制网格线
+        function drawGrid() {
+            // 更新网格数量，确保与当前canvas尺寸匹配
+            gridCount = canvas.width / gridSize;
+            
+            // 设置网格线的颜色（深灰色，不会太明显）
+            ctx.strokeStyle = '#333';
+            ctx.lineWidth = 1;
+            
+            // 绘制垂直线
+            for (let x = 0; x <= gridCount; x++) {
+                ctx.beginPath();
+                ctx.moveTo(x * gridSize, 0);
+                ctx.lineTo(x * gridSize, canvas.height);
+                ctx.stroke();
+            }
+            
+            // 绘制水平线
+            for (let y = 0; y <= gridCount; y++) {
+                ctx.beginPath();
+                ctx.moveTo(0, y * gridSize);
+                ctx.lineTo(canvas.width, y * gridSize);
+                ctx.stroke();
+            }
+        }
+
         // 生成随机食物位置
         function generateFood() {
+            // 更新网格数量，确保与当前canvas尺寸匹配
+            gridCount = canvas.width / gridSize;
+            
             food = {
                 x: Math.floor(Math.random() * gridCount),
                 y: Math.floor(Math.random() * gridCount)
@@ -326,6 +356,9 @@
             ctx.fillStyle = '#000';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
+            // 绘制网格线，帮助玩家对齐
+            drawGrid();
+
             // 绘制蛇身
             for (let i = 0; i < snake.length; i++) {
                 if (i === 0) {
@@ -336,22 +369,22 @@
                     ctx.fillStyle = '#2E7D32';
                 }
                 
-                // 画出蛇的每一节
+                // 画出蛇的每一节，留1像素边距让网格线可见
                 ctx.fillRect(
-                    snake[i].x * gridSize, 
-                    snake[i].y * gridSize, 
+                    snake[i].x * gridSize + 1, 
+                    snake[i].y * gridSize + 1, 
                     gridSize - 2, 
                     gridSize - 2
                 );
             }
 
-            // 绘制食物（红色圆点）
+            // 绘制食物（红色圆点），居中对齐网格
             ctx.fillStyle = '#f44336';
             ctx.beginPath();
             ctx.arc(
                 food.x * gridSize + gridSize / 2,
                 food.y * gridSize + gridSize / 2,
-                gridSize / 2 - 1,
+                gridSize / 2 - 2,
                 0,
                 2 * Math.PI
             );
@@ -365,11 +398,28 @@
                 return;
             }
             
+            // 更新网格数量，确保与当前canvas尺寸匹配
+            gridCount = canvas.width / gridSize;
+            
+            // 记录当前移动时间
+            lastMoveTime = Date.now();
+            
             // 计算蛇头的新位置
             const head = {x: snake[0].x + direction.x, y: snake[0].y + direction.y};
+            
+            // 调试信息：显示蛇头当前位置和即将移动到的位置
+            console.log(`蛇头移动：从(${snake[0].x}, ${snake[0].y}) 到 (${head.x}, ${head.y}), 网格范围: 0到${gridCount-1}`);
+            
+            // 检查是否在边界位置
+            if (head.x === 0 || head.x === gridCount-1 || head.y === 0 || head.y === gridCount-1) {
+                console.log(`蛇头到达边界位置: (${head.x}, ${head.y})`);
+            }
 
-            // 检查是否撞墙
+            // 检查是否撞墙 - 新规则：只有尝试穿过墙壁时才游戏结束
+            // 网格坐标范围是0到gridCount-1，蛇头可以到达边界但不能超出
             if (head.x < 0 || head.x >= gridCount || head.y < 0 || head.y >= gridCount) {
+                // 蛇头尝试穿过墙壁，游戏结束
+                console.log(`蛇头尝试穿墙！位置: (${head.x}, ${head.y}), 网格范围: 0到${gridCount-1}`);
                 gameOver();
                 return;
             }
@@ -405,6 +455,11 @@
             gameOverElement.style.display = 'block';
             startButton.style.display = 'inline-block';
             pauseButton.style.display = 'none';
+            
+            // 游戏结束后重新启用速度滑杆
+            speedSlider.disabled = false;
+            speedSlider.style.opacity = '1';
+            speedSlider.style.cursor = 'pointer';
         }
 
         // 重置游戏
@@ -442,11 +497,18 @@
             startButton.style.display = 'none';
             pauseButton.style.display = 'inline-block';
             
+            // 游戏开始后禁用速度滑杆
+            speedSlider.disabled = true;
+            speedSlider.style.opacity = '0.5';
+            speedSlider.style.cursor = 'not-allowed';
+            
             // 设置游戏速度
             updateGameSpeed();
             
-            // 开始游戏循环
+            // 确保清除任何可能存在的旧定时器，然后开始新的游戏循环
+            clearInterval(gameInterval);
             gameInterval = setInterval(gameLoop, gameSpeed);
+            console.log(`游戏开始，速度: ${Math.round(gameSpeed)}ms`);
         }
 
         // 暂停游戏
@@ -457,6 +519,8 @@
                 // 继续游戏
                 gamePaused = false;
                 pauseButton.textContent = '暂停';
+                // 确保先清除旧的定时器，再创建新的
+                clearInterval(gameInterval);
                 gameInterval = setInterval(gameLoop, gameSpeed);
             } else {
                 // 暂停游戏
@@ -470,23 +534,32 @@
         function updateGameSpeed() {
             const speedValue = parseInt(speedSlider.value);
             
-            // 速度范围：1-10，对应游戏速度从300毫秒到50毫秒
-            // 计算公式：300 - (speedValue - 1) * 25 = 300 - speedValue*25 + 25 = 325 - speedValue*25
-            gameSpeed = 325 - (speedValue * 25);
+            // 速度范围：1-9档，对应游戏速度从1000毫秒到100毫秒
+            // 每档之间相差112.5毫秒，让速度变化更平缓
+            // 计算公式：1000 - (speedValue - 1) * 112.5
+            // 1档=1000ms, 2档=887.5ms, 3档=775ms, ..., 9档=100ms
+            gameSpeed = 1000 - (speedValue - 1) * 112.5;
             
             // 更新速度显示文字和具体数值
-            if (speedValue <= 3) {
-                speedDisplay.textContent = `慢速 (${gameSpeed}ms)`;
-            } else if (speedValue <= 7) {
-                speedDisplay.textContent = `中速 (${gameSpeed}ms)`;
+            // 重新划分速度档位，让新手更容易理解
+            if (speedValue <= 2) {
+                speedDisplay.textContent = `很慢 (${Math.round(gameSpeed)}ms)`;
+            } else if (speedValue <= 4) {
+                speedDisplay.textContent = `慢速 (${Math.round(gameSpeed)}ms)`;
+            } else if (speedValue <= 6) {
+                speedDisplay.textContent = `中速 (${Math.round(gameSpeed)}ms)`;
+            } else if (speedValue <= 8) {
+                speedDisplay.textContent = `快速 (${Math.round(gameSpeed)}ms)`;
             } else {
-                speedDisplay.textContent = `快速 (${gameSpeed}ms)`;
+                speedDisplay.textContent = `很快 (${Math.round(gameSpeed)}ms)`;
             }
             
             // 如果游戏正在运行，重新设置定时器
             if (gameRunning && !gamePaused) {
+                // 先清除旧的定时器，防止多个定时器同时运行
                 clearInterval(gameInterval);
                 gameInterval = setInterval(gameLoop, gameSpeed);
+                console.log(`游戏速度已更新为: ${Math.round(gameSpeed)}ms`);
             }
         }
 
@@ -506,29 +579,49 @@
             // 如果游戏没有运行，不处理按键
             if (!gameRunning || gamePaused) return;
             
+            // 防止在同一个游戏循环内多次改变方向
+            // 如果距离上次移动时间太短，忽略按键（调整为更宽松的限制）
+            const currentTime = Date.now();
+            if (currentTime - lastMoveTime < Math.min(gameSpeed * 0.3, 100)) {
+                console.log(`按键被忽略，距离上次移动时间太短: ${currentTime - lastMoveTime}ms`);
+                return;
+            }
+            
             switch(event.key) {
                 case 'ArrowUp':
-                    // 向上移动，但不能直接反向
-                    if (direction.y !== 1) {
+                    // 向上移动，但不能直接反向（只有蛇身长度大于1时才检查反向）
+                    if (snake.length === 1 || direction.y !== 1) {
                         direction = {x: 0, y: -1};
+                        console.log('方向改变：向上');
+                    } else {
+                        console.log('禁止反向移动：当前向下，不能向上');
                     }
                     break;
                 case 'ArrowDown':
                     // 向下移动，但不能直接反向
-                    if (direction.y !== -1) {
+                    if (snake.length === 1 || direction.y !== -1) {
                         direction = {x: 0, y: 1};
+                        console.log('方向改变：向下');
+                    } else {
+                        console.log('禁止反向移动：当前向上，不能向下');
                     }
                     break;
                 case 'ArrowLeft':
                     // 向左移动，但不能直接反向
-                    if (direction.x !== 1) {
+                    if (snake.length === 1 || direction.x !== 1) {
                         direction = {x: -1, y: 0};
+                        console.log('方向改变：向左');
+                    } else {
+                        console.log('禁止反向移动：当前向右，不能向左');
                     }
                     break;
                 case 'ArrowRight':
                     // 向右移动，但不能直接反向
-                    if (direction.x !== -1) {
+                    if (snake.length === 1 || direction.x !== -1) {
                         direction = {x: 1, y: 0};
+                        console.log('方向改变：向右');
+                    } else {
+                        console.log('禁止反向移动：当前向左，不能向右');
                     }
                     break;
             }
@@ -571,14 +664,20 @@
                 // 水平滑动
                 if (Math.abs(deltaX) > minSwipeDistance) {
                     if (deltaX > 0) {
-                        // 向右滑动
-                        if (direction.x !== -1) {
+                        // 向右滑动，但不能直接反向
+                        if (snake.length === 1 || direction.x !== -1) {
                             direction = {x: 1, y: 0};
+                            console.log('触屏方向改变：向右');
+                        } else {
+                            console.log('禁止反向移动：当前向左，不能向右');
                         }
                     } else {
-                        // 向左滑动
-                        if (direction.x !== 1) {
+                        // 向左滑动，但不能直接反向
+                        if (snake.length === 1 || direction.x !== 1) {
                             direction = {x: -1, y: 0};
+                            console.log('触屏方向改变：向左');
+                        } else {
+                            console.log('禁止反向移动：当前向右，不能向左');
                         }
                     }
                 }
@@ -586,14 +685,20 @@
                 // 垂直滑动
                 if (Math.abs(deltaY) > minSwipeDistance) {
                     if (deltaY > 0) {
-                        // 向下滑动
-                        if (direction.y !== -1) {
+                        // 向下滑动，但不能直接反向
+                        if (snake.length === 1 || direction.y !== -1) {
                             direction = {x: 0, y: 1};
+                            console.log('触屏方向改变：向下');
+                        } else {
+                            console.log('禁止反向移动：当前向上，不能向下');
                         }
                     } else {
-                        // 向上滑动
-                        if (direction.y !== 1) {
+                        // 向上滑动，但不能直接反向
+                        if (snake.length === 1 || direction.y !== 1) {
                             direction = {x: 0, y: -1};
+                            console.log('触屏方向改变：向上');
+                        } else {
+                            console.log('禁止反向移动：当前向下，不能向上');
                         }
                     }
                 }
@@ -660,6 +765,8 @@
         });
 
         console.log('贪吃蛇游戏初始化完成！');
+        console.log(`游戏区域：${canvas.width}x${canvas.height}像素，网格大小：${gridSize}像素，网格数量：${canvas.width/gridSize}x${canvas.height/gridSize}`);
+        console.log(`有效坐标范围：0到${(canvas.width/gridSize)-1}`);
     </script>
 </body>
 </html>
