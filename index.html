@@ -22,50 +22,28 @@
             padding: 10px;
         }
 
-        /* 静音按钮 */
-        .mute-button {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            background: rgba(255, 255, 255, 0.9);
-            border: 2px solid #ddd;
-            border-radius: 50%;
-            width: 50px;
-            height: 50px;
-            font-size: 1.5em;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-            z-index: 1000;
-        }
-
-        .mute-button:hover {
-            background: rgba(255, 255, 255, 1);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-            transform: scale(1.1);
-        }
 
         /* 游戏标题 */
         h1 {
             color: #333;
-            margin-bottom: 20px;
+            margin-bottom: 15px;
             font-size: 2em;
         }
 
         /* 游戏控制面板 */
         .game-controls {
             display: flex;
+            flex-direction: column;
             align-items: center;
-            gap: 20px;
-            margin-bottom: 20px;
-            flex-wrap: wrap;
-            justify-content: center;
+            gap: 12px;
+            margin-bottom: 15px;
+            width: 100%;
         }
 
-        /* 得分和按钮容器 */
-        .score-and-buttons {
+        /* 两行控制条 */
+        .controls-row {
             display: flex;
-            gap: 15px;
+            gap: 12px;
             align-items: center;
             justify-content: center;
             width: 100%;
@@ -78,10 +56,10 @@
             justify-content: center;
             background: linear-gradient(135deg, #FF9800, #F57C00);
             color: white;
-            padding: 12px 24px;
+            padding: 10px 18px;
             border-radius: 8px;
             box-shadow: 0 2px 8px rgba(255, 152, 0, 0.3);
-            min-width: 120px;
+            min-width: 110px;
             text-align: center;
             border: 2px solid rgba(255, 255, 255, 0.2);
             height: 48px; /* 与按钮高度一致 */
@@ -166,7 +144,7 @@
             transition: all 0.3s ease;
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
             height: 48px; /* 与得分显示高度一致 */
-            min-width: 120px;
+            min-width: 110px;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -212,22 +190,45 @@
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            background-color: rgba(255, 255, 255, 0.95);
-            padding: 30px;
+            background-color: rgba(0, 0, 0, 0.9);
+            padding: 26px 28px;
             border-radius: 10px;
             text-align: center;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.5);
             display: none;
+            color: #bffcff;
         }
 
-        .game-over h2 {
-            color: #d32f2f;
-            margin-bottom: 15px;
+        .game-over .over-title {
+            color: #ff3b30;
+            margin-bottom: 12px;
+            font-size: 28px;
+            font-weight: 900;
+            letter-spacing: 2px;
+            text-shadow: 0 0 10px rgba(255,59,48,0.8);
         }
 
         .game-over p {
-            margin-bottom: 20px;
-            font-size: 1.1em;
+            margin-bottom: 10px;
+            font-size: 1.05em;
+        }
+
+        /* 飘字动画 */
+        .float-score {
+            position: absolute;
+            font-weight: 900;
+            color: #ffeb3b;
+            text-shadow: 0 2px 6px rgba(0,0,0,0.45);
+            pointer-events: none;
+            animation: floatUp 1050ms ease-out forwards; /* 时长增加50% */
+            transform: translate(-50%, 0);
+            z-index: 2;
+            font-size: 30px; /* 字号增加 */
+        }
+
+        @keyframes floatUp {
+            0% { opacity: 1; transform: translate(-50%, 0); }
+            100% { opacity: 0; transform: translate(-50%, -90px); }
         }
 
         /* 操作说明 */
@@ -324,25 +325,30 @@
     </style>
 </head>
 <body>
-    <!-- 静音按钮 -->
-    <button id="muteButton" class="mute-button" onclick="toggleMute()" title="关闭音效">🔊</button>
-    
-    <!-- 游戏标题 -->
-    <h1>🐍 贪吃蛇游戏</h1>
+    <!-- 标题行：标题 + 静音按钮 -->
+    <h1 id="titleText">🐍 贪吃蛇游戏</h1>
 
     <!-- 游戏控制面板 -->
     <div class="game-controls">
         <!-- 速度控制 -->
         <div class="speed-control">
             <label for="speedSlider">速度:</label>
-            <input type="range" id="speedSlider" class="speed-slider" min="1" max="9" value="5">
+            <input type="range" id="speedSlider" class="speed-slider" min="1" max="10" value="6">
             <span id="speedDisplay" class="speed-display">中速</span>
         </div>
 
-        <!-- 得分和游戏控制按钮 -->
-        <div class="score-and-buttons">
+        <!-- 第一行：得分 + 静音按钮 -->
+        <div class="controls-row">
             <div class="score-display">
                 <span class="score-text">得分: <span id="scoreValue">0</span></span>
+            </div>
+            <button id="muteButtonInline" class="game-button start-button">🔊 静音</button>
+        </div>
+
+        <!-- 第二行：最高 + 开始游戏 -->
+        <div class="controls-row">
+            <div class="score-display" id="bestScoreBox">
+                <span class="score-text">最高: <span id="bestScoreValue">0</span></span>
             </div>
             <div class="game-buttons">
                 <button id="startButton" class="game-button start-button">开始游戏</button>
@@ -358,9 +364,10 @@
 
         <!-- 游戏结束提示 -->
         <div id="gameOver" class="game-over">
-            <h2>游戏结束！</h2>
-            <p>最终得分: <span id="finalScore">0</span></p>
-            <button id="restartButton" class="game-button start-button">重新开始</button>
+            <div class="over-title">游戏结束</div>
+            <p>你的得分：<span id="finalScore">0</span></p>
+            <p>最高纪录：<span id="bestScoreText">0</span></p>
+            <p>坚持时间：<span id="elapsedTime">0</span>秒</p>
         </div>
     </div>
 
@@ -370,13 +377,7 @@
         <div class="instruction-section">
             <h4>控制方式</h4>
             <p>💻 <strong>电脑端</strong>: 使用方向键 ↑↓←→ 控制蛇的移动</p>
-            <p>📱 <strong>移动端</strong>: 在游戏区域内滑动手指控制方向</p>
-            <p style="margin-left: 20px; font-size: 0.9em; color: #666;">
-                • 向上滑动：蛇向上移动<br>
-                • 向下滑动：蛇向下移动<br>
-                • 向左滑动：蛇向左移动<br>
-                • 向右滑动：蛇向右移动
-            </p>
+            <p>📱 <strong>移动端</strong>: 在游戏区域内滑动屏幕控制方向</p>
         </div>
         
         <div class="instruction-section">
@@ -400,10 +401,12 @@
         const ctx = canvas.getContext('2d');
         const scoreElement = document.getElementById('scoreValue');
         const finalScoreElement = document.getElementById('finalScore');
+        const elapsedTimeElement = document.getElementById('elapsedTime');
+        const bestScoreText = document.getElementById('bestScoreText');
         const gameOverElement = document.getElementById('gameOver');
         const startButton = document.getElementById('startButton');
         const pauseButton = document.getElementById('pauseButton');
-        const restartButton = document.getElementById('restartButton');
+        // const restartButton = document.getElementById('restartButton');
         const speedSlider = document.getElementById('speedSlider');
         const speedDisplay = document.getElementById('speedDisplay');
 
@@ -416,6 +419,8 @@
         let gamePaused = false; // 游戏是否暂停
         let waitingForInput = false; // 是否等待用户首次输入
         let score = 0; // 当前得分
+        let bestScore = parseInt(localStorage.getItem('hungry_snake_best_score') || '0'); // 最高分
+        let gameStartTimestamp = 0; // 本局开始时间戳（毫秒）
         let gameSpeed = 200; // 游戏速度（毫秒）
 
         // 蛇的初始状态
@@ -457,7 +462,7 @@
             gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
             gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
             
-            oscillator.type = 'sine';
+            oscillator.type = 'triangle';
             oscillator.start(audioContext.currentTime);
             oscillator.stop(audioContext.currentTime + 0.3);
         }
@@ -484,12 +489,48 @@
             oscillator.stop(audioContext.currentTime + 0.5);
         }
 
+        // 破纪录庆祝音效 - 优美的胜利旋律
+        function playCelebrateSound() {
+            if (isMuted || !audioContext) return;
+            
+            // 创建一个更丰富的庆祝音效，模拟胜利进行曲
+            const playNote = (freq, startTime, duration, volume = 0.15) => {
+                const osc = audioContext.createOscillator();
+                const gain = audioContext.createGain();
+                osc.connect(gain);
+                gain.connect(audioContext.destination);
+                
+                osc.type = 'triangle'; // 使用三角波，音色更温暖
+                osc.frequency.setValueAtTime(freq, startTime);
+                gain.gain.setValueAtTime(0, startTime);
+                gain.gain.linearRampToValueAtTime(volume, startTime + 0.01);
+                gain.gain.exponentialRampToValueAtTime(0.01, startTime + duration);
+                
+                osc.start(startTime);
+                osc.stop(startTime + duration);
+            };
+            
+            const t = audioContext.currentTime;
+            // 播放一段优美的上升旋律 (C大调音阶)
+            playNote(523.25, t, 0.2);        // C5
+            playNote(587.33, t + 0.15, 0.2); // D5  
+            playNote(659.25, t + 0.3, 0.2);  // E5
+            playNote(698.46, t + 0.45, 0.2); // F5
+            playNote(783.99, t + 0.6, 0.3);  // G5 (稍长)
+            
+            // 添加和声
+            playNote(1046.50, t + 0.6, 0.4, 0.1); // C6 高音和声
+            playNote(1318.51, t + 0.75, 0.25, 0.08); // E6 结束音
+        }
+
         // 切换静音状态
         function toggleMute() {
             isMuted = !isMuted;
-            const muteButton = document.getElementById('muteButton');
-            muteButton.textContent = isMuted ? '🔇' : '🔊';
-            muteButton.title = isMuted ? '开启音效' : '关闭音效';
+            // 更新绿色静音按钮状态
+            const muteButtonInline = document.getElementById('muteButtonInline');
+            if (muteButtonInline) {
+                muteButtonInline.textContent = isMuted ? '🔇 已静音' : '🔊 静音';
+            }
         }
 
         // 检测设备类型
@@ -501,6 +542,8 @@
         // 页面加载完成后检测设备
         window.addEventListener('load', function() {
             detectDevice();
+            // 同步静音按钮高度与标题高度，并与游戏区右边对齐
+            syncMuteButton();
         });
 
         // 绘制网格线
@@ -589,6 +632,23 @@
             ctx.fill();
         }
 
+        // 生成飘字元素
+        function spawnFloatScore(px, py, text) {
+            const floatEl = document.createElement('div');
+            floatEl.className = 'float-score';
+            floatEl.textContent = text;
+            // 将画布坐标转换为容器内的绝对定位
+            const rect = canvas.getBoundingClientRect();
+            // 使用容器定位（game-container为相对定位）
+            const container = document.querySelector('.game-container');
+            const containerRect = container.getBoundingClientRect();
+            floatEl.style.left = (px + rect.left - containerRect.left) + 'px';
+            floatEl.style.top = (py + rect.top - containerRect.top) + 'px';
+            container.appendChild(floatEl);
+            // 动画结束后移除
+            setTimeout(() => container.removeChild(floatEl), 800);
+        }
+
         // 移动蛇
         function moveSnake() {
             // 如果蛇还没有移动方向，就不移动
@@ -641,12 +701,19 @@
             // 检查是否吃到食物
             if (head.x === food.x && head.y === food.y) {
                 // 吃到食物，增加得分
-                score++;
+                const prevScore = score;
+                score += 10; // 每块+10分
                 scoreElement.textContent = score;
                 // 播放得分音效
                 playScoreSound();
+                // 飘起+10分效果
+                spawnFloatScore((head.x + 0.5) * gridSize, (head.y + 0.5) * gridSize, '+10');
                 // 生成新的食物
                 generateFood();
+                // 如果本次得分打破最高纪录，播放庆祝音效
+                if (!isMuted && audioContext && prevScore < bestScore && score >= bestScore) {
+                    playCelebrateSound();
+                }
             } else {
                 // 没吃到食物，移除蛇尾
                 snake.pop();
@@ -657,9 +724,22 @@
         function gameOver() {
             gameRunning = false;
             finalScoreElement.textContent = score;
+            // 计算坚持时间并展示
+            const seconds = gameStartTimestamp ? Math.max(0, Math.round((Date.now() - gameStartTimestamp) / 1000)) : 0;
+            elapsedTimeElement.textContent = seconds;
+            // 更新最高分
+            let brokeRecordNow = false;
+            if (score > bestScore) {
+                bestScore = score;
+                localStorage.setItem('hungry_snake_best_score', String(bestScore));
+                const bestScoreValueEl = document.getElementById('bestScoreValue');
+                if (bestScoreValueEl) bestScoreValueEl.textContent = bestScore;
+                brokeRecordNow = true;
+            }
+            bestScoreText.textContent = bestScore;
             gameOverElement.style.display = 'block';
             startButton.style.display = 'inline-block';
-            startButton.textContent = '开始游戏'; // 确保按钮文本正确
+            startButton.textContent = '重新开始'; // 游戏结束后将开始按钮改为"重新开始"
             pauseButton.style.display = 'none';
             
             // 播放游戏结束音效
@@ -721,7 +801,12 @@
             
             gameRunning = true;
             gamePaused = false;
-            waitingForInput = true; // 等待用户首次输入
+            waitingForInput = false; // 直接开始移动
+            // 默认向右移动
+            if (direction.x === 0 && direction.y === 0) {
+                direction = {x: 1, y: 0};
+            }
+            gameStartTimestamp = Date.now(); // 记录本局开始时间
             startButton.style.display = 'none';
             pauseButton.style.display = 'inline-block';
             
@@ -736,7 +821,7 @@
             // 确保清除任何可能存在的旧定时器，然后开始新的游戏循环
             clearInterval(gameInterval);
             gameInterval = setInterval(gameLoop, gameSpeed);
-            console.log(`游戏准备就绪，等待首次方向操作，速度: ${Math.round(gameSpeed)}ms`);
+            console.log(`游戏开始，默认向右移动，速度: ${Math.round(gameSpeed)}ms`);
         }
 
         // 暂停游戏
@@ -762,11 +847,11 @@
         function updateGameSpeed() {
             const speedValue = parseInt(speedSlider.value);
             
-            // 速度范围：1-9档，对应游戏速度从900毫秒到100毫秒
-            // 每档减少100毫秒，速度变化更直观
-            // 计算公式：900 - (speedValue - 1) * 100
-            // 1档=900ms, 2档=800ms, 3档=700ms, 4档=600ms, 5档=500ms, 6档=400ms, 7档=300ms, 8档=200ms, 9档=100ms
-            gameSpeed = 900 - (speedValue - 1) * 100;
+            // 速度范围：1-10档，对应游戏速度从500毫秒到50毫秒
+            // 每档减少50毫秒，速度变化更直观
+            // 计算公式：500 - (speedValue - 1) * 50
+            // 1档=500ms, 2档=450ms, 3档=400ms, 4档=350ms, 5档=300ms, 6档=250ms, 7档=200ms, 8档=150ms, 9档=100ms, 10档=50ms
+            gameSpeed = 500 - (speedValue - 1) * 50;
             
             // 更新速度显示文字和具体数值
             // 重新划分速度档位，让新手更容易理解
@@ -792,30 +877,50 @@
         }
 
         // 绑定按钮事件
-        startButton.addEventListener('click', startGame);
+        startButton.addEventListener('click', function() {
+            if (startButton.textContent === '重新开始') {
+                // 游戏结束后点击重新开始，先重置再开始
+                resetGame();
+                startGame();
+            } else {
+                // 正常开始游戏
+                startGame();
+            }
+        });
+        // 行内绿色静音按钮与右上角同逻辑
+        const muteButtonInline = document.getElementById('muteButtonInline');
+        if (muteButtonInline) {
+            muteButtonInline.addEventListener('click', function(){
+                toggleMute();
+                muteButtonInline.textContent = isMuted ? '🔇 已静音' : '🔊 静音';
+            });
+        }
         pauseButton.addEventListener('click', pauseGame);
-        restartButton.addEventListener('click', resetGame);
+        // 重新开始功能合并到开始按钮文案切换，这里移除单独的按钮事件
         speedSlider.addEventListener('input', updateGameSpeed);
 
         // 键盘控制（电脑端）
         document.addEventListener('keydown', function(event) {
             // 防止页面滚动
-            if(['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(event.key)) {
+            if(['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', ' '].includes(event.key)) {
                 event.preventDefault();
             }
             
             // 如果游戏没有运行，不处理按键
             if (!gameRunning || gamePaused) return;
-            
-            // 防止在同一个游戏循环内多次改变方向
-            // 如果距离上次移动时间太短，忽略按键（调整为更宽松的限制）
+
+            // 允许立刻改变方向：放宽按键间隔到最小值10ms
             const currentTime = Date.now();
-            if (currentTime - lastMoveTime < Math.min(gameSpeed * 0.3, 100)) {
-                console.log(`按键被忽略，距离上次移动时间太短: ${currentTime - lastMoveTime}ms`);
-                return;
+            if (currentTime - lastMoveTime < Math.min(gameSpeed * 0.15, 10)) {
+                // 仍然允许在等待首次输入/刚开始时改变方向
             }
             
+            // 将上面的限制进一步放宽，允许在每次循环内更快响应
+            
             switch(event.key) {
+                case ' ': // 空格键：暂停/继续
+                    pauseGame();
+                    break;
                 case 'ArrowUp':
                     // 向上移动，但不能直接反向（只有蛇身长度大于1时才检查反向）
                     if (snake.length === 1 || direction.y !== 1) {
@@ -985,6 +1090,9 @@
             direction = {x: 0, y: 0};
             score = 0;
             scoreElement.textContent = score;
+            // 刷新最高分显示
+            const bestScoreValueEl = document.getElementById('bestScoreValue');
+            if (bestScoreValueEl) bestScoreValueEl.textContent = bestScore;
             gameRunning = false;
             gamePaused = false;
             waitingForInput = false; // 初始化等待输入状态
@@ -1021,6 +1129,7 @@
         // 页面加载完成后初始化游戏
         window.addEventListener('load', function() {
             initGame();
+            syncMuteButton();
         });
 
         // 窗口大小改变时重新适配
@@ -1050,7 +1159,16 @@
                 
                 draw();
             }
+            syncMuteButton();
         });
+
+        // 初始化绿色静音按钮状态
+        function syncMuteButton() {
+            const muteButtonInline = document.getElementById('muteButtonInline');
+            if (muteButtonInline) {
+                muteButtonInline.textContent = isMuted ? '🔇 已静音' : '🔊 静音';
+            }
+        }
 
         console.log('贪吃蛇游戏初始化完成！');
         console.log(`游戏区域：${canvas.width}x${canvas.height}像素，网格大小：${gridSize}像素，网格数量：${canvas.width/gridSize}x${canvas.height/gridSize}`);
