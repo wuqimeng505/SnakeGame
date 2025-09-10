@@ -56,10 +56,11 @@
             justify-content: center;
             background: linear-gradient(135deg, #FF9800, #F57C00);
             color: white;
-            padding: 10px 18px;
+            padding: 10px 16px;
             border-radius: 8px;
             box-shadow: 0 2px 8px rgba(255, 152, 0, 0.3);
-            min-width: 110px;
+            min-width: 140px; /* 与按钮宽度一致 */
+            width: 140px; /* 固定宽度，与按钮保持一致 */
             text-align: center;
             border: 2px solid rgba(255, 255, 255, 0.2);
             height: 48px; /* 与按钮高度一致 */
@@ -135,7 +136,7 @@
 
         /* 游戏按钮 */
         .game-button {
-            padding: 12px 24px;
+            padding: 12px 16px;
             font-size: 1em;
             border: none;
             border-radius: 8px;
@@ -144,10 +145,12 @@
             transition: all 0.3s ease;
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
             height: 48px; /* 与得分显示高度一致 */
-            min-width: 110px;
+            min-width: 140px; /* 增加宽度，确保文字不会折行 */
+            width: 140px; /* 固定宽度，让所有按钮保持一致 */
             display: flex;
             align-items: center;
             justify-content: center;
+            white-space: nowrap; /* 防止文字换行 */
         }
 
         .start-button {
@@ -371,27 +374,47 @@
         </div>
     </div>
 
+    <!-- 清除最高纪录按钮 -->
+    <div style="margin: 20px 0; text-align: center;">
+        <button id="clearRecordButton" class="game-button" style="background-color: #f44336; color: white; font-size: 0.9em;">
+            🗑️ 清除最高纪录
+        </button>
+    </div>
+
     <!-- 操作说明 -->
     <div class="instructions">
         <h3>🎮 操作说明</h3>
         <div class="instruction-section">
             <h4>控制方式</h4>
-            <p>💻 <strong>电脑端</strong>: 使用方向键 ↑↓←→ 控制蛇的移动</p>
+            <p>💻 <strong>电脑端</strong>: 使用方向键 ↑↓←→ 控制蛇的移动，空格键暂停/继续</p>
             <p>📱 <strong>移动端</strong>: 在游戏区域内滑动屏幕控制方向</p>
         </div>
         
         <div class="instruction-section">
+            <h4>游戏特色</h4>
+            <p>🐍 <strong>可爱蛇形</strong>: 蛇身采用圆形设计，更加生动自然</p>
+            <p>👀 <strong>智能眼睛</strong>: 蛇头有两个小眼睛，会根据移动方向转动</p>
+            <p>🎯 <strong>精致尾巴</strong>: 蛇的最后一段身体后面有小尾巴装饰，纯视觉效果</p>
+            <p>🎵 <strong>音效系统</strong>: 吃食物有提示音，打破记录有庆祝音乐</p>
+            <p>✨ <strong>飘字特效</strong>: 吃到食物时有+10分的飘字动画</p>
+        </div>
+        
+        <div class="instruction-section">
             <h4>游戏规则</h4>
-            <p>🍎 吃到红色食物可以增长身体和得分</p>
+            <p>🍎 吃到红色食物可以增长身体和得分（每个+10分）</p>
             <p>🚫 避免撞到自己的身体</p>
             <p>🧱 蛇头可以到达边界，但不能穿过墙壁</p>
             <p>⚡ 不能反向移动（防止意外后退）</p>
+            <p>🏆 首次超过最高分时会播放庆祝音乐</p>
         </div>
         
         <div class="instruction-section">
             <h4>游戏设置</h4>
-            <p>🎚️ 速度调节：游戏开始前可调整，游戏中被锁定</p>
-            <p>⏸️ 暂停功能：游戏进行中可随时暂停/继续</p>
+            <p>🎚️ <strong>速度调节</strong>: 游戏开始前可调整（1-10档），游戏中被锁定</p>
+            <p>⏸️ <strong>暂停功能</strong>: 游戏进行中可随时暂停/继续</p>
+            <p>🔊 <strong>音效控制</strong>: 可以随时开启或关闭游戏音效</p>
+            <p>📊 <strong>记录保存</strong>: 最高分会自动保存到本地浏览器</p>
+            <p>🗑️ <strong>清除记录</strong>: 可以通过"清除最高纪录"按钮重置最高分</p>
         </div>
     </div>
 
@@ -600,23 +623,96 @@
             // 绘制网格线，帮助玩家对齐
             drawGrid();
 
-            // 绘制蛇身
+            // 绘制蛇身 - 现在用圆形
             for (let i = 0; i < snake.length; i++) {
-                if (i === 0) {
-                    // 蛇头用亮绿色
-                    ctx.fillStyle = '#4CAF50';
-                } else {
-                    // 蛇身用深绿色
-                    ctx.fillStyle = '#2E7D32';
-                }
+                const centerX = snake[i].x * gridSize + gridSize / 2; // 圆心X坐标
+                const centerY = snake[i].y * gridSize + gridSize / 2; // 圆心Y坐标
+                const radius = gridSize / 2 - 2; // 圆的半径，留一点边距
                 
-                // 画出蛇的每一节，留1像素边距让网格线可见
-                ctx.fillRect(
-                    snake[i].x * gridSize + 1, 
-                    snake[i].y * gridSize + 1, 
-                    gridSize - 2, 
-                    gridSize - 2
-                );
+                if (i === 0) {
+                    // 蛇头：画一个亮绿色的圆，并添加眼睛
+                    ctx.fillStyle = '#4CAF50';
+                    ctx.beginPath();
+                    ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI);
+                    ctx.fill();
+                    
+                    // 画蛇头的两个小眼睛
+                    ctx.fillStyle = '#000'; // 黑色眼睛
+                    const eyeSize = 2; // 眼睛大小
+                    const eyeOffset = 4; // 眼睛距离中心的距离
+                    
+                    // 根据移动方向调整眼睛位置
+                    let leftEyeX, leftEyeY, rightEyeX, rightEyeY;
+                    
+                    if (direction.x === 1) { // 向右移动
+                        leftEyeX = centerX + eyeOffset;
+                        leftEyeY = centerY - eyeOffset;
+                        rightEyeX = centerX + eyeOffset;
+                        rightEyeY = centerY + eyeOffset;
+                    } else if (direction.x === -1) { // 向左移动
+                        leftEyeX = centerX - eyeOffset;
+                        leftEyeY = centerY - eyeOffset;
+                        rightEyeX = centerX - eyeOffset;
+                        rightEyeY = centerY + eyeOffset;
+                    } else if (direction.y === -1) { // 向上移动
+                        leftEyeX = centerX - eyeOffset;
+                        leftEyeY = centerY - eyeOffset;
+                        rightEyeX = centerX + eyeOffset;
+                        rightEyeY = centerY - eyeOffset;
+                    } else if (direction.y === 1) { // 向下移动
+                        leftEyeX = centerX - eyeOffset;
+                        leftEyeY = centerY + eyeOffset;
+                        rightEyeX = centerX + eyeOffset;
+                        rightEyeY = centerY + eyeOffset;
+                    } else { // 没有方向时，默认向右
+                        leftEyeX = centerX + eyeOffset;
+                        leftEyeY = centerY - eyeOffset;
+                        rightEyeX = centerX + eyeOffset;
+                        rightEyeY = centerY + eyeOffset;
+                    }
+                    
+                    // 画左眼
+                    ctx.beginPath();
+                    ctx.arc(leftEyeX, leftEyeY, eyeSize, 0, 2 * Math.PI);
+                    ctx.fill();
+                    
+                    // 画右眼
+                    ctx.beginPath();
+                    ctx.arc(rightEyeX, rightEyeY, eyeSize, 0, 2 * Math.PI);
+                    ctx.fill();
+                    
+                } else {
+                    // 蛇身：画深绿色的圆
+                    ctx.fillStyle = '#2E7D32';
+                    ctx.beginPath();
+                    ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI);
+                    ctx.fill();
+                }
+            }
+
+            // 绘制蛇尾装饰 - 在最后一节身体后面画一个小尾巴
+            if (snake.length > 1) {
+                const lastSegment = snake[snake.length - 1]; // 最后一节身体
+                const secondLastSegment = snake[snake.length - 2]; // 倒数第二节身体
+                
+                // 计算尾巴的方向（与蛇身移动方向相反）
+                const tailDirectionX = lastSegment.x - secondLastSegment.x;
+                const tailDirectionY = lastSegment.y - secondLastSegment.y;
+                
+                // 尾巴的起始位置（最后一节身体的中心）
+                const lastCenterX = lastSegment.x * gridSize + gridSize / 2;
+                const lastCenterY = lastSegment.y * gridSize + gridSize / 2;
+                
+                // 尾巴的结束位置（在最后一节身体的相反方向）
+                const tailLength = 8; // 尾巴长度（像素）
+                const tailEndX = lastCenterX + tailDirectionX * tailLength;
+                const tailEndY = lastCenterY + tailDirectionY * tailLength;
+                
+                // 画小尾巴（深绿色的小圆点）
+                ctx.fillStyle = '#1B5E20'; // 比蛇身更深的绿色
+                ctx.beginPath();
+                ctx.arc(tailEndX, tailEndY, 3, 0, 2 * Math.PI); // 小圆点，半径3像素
+                ctx.fill();
             }
 
             // 绘制食物（红色圆点），居中对齐网格
@@ -710,8 +806,9 @@
                 spawnFloatScore((head.x + 0.5) * gridSize, (head.y + 0.5) * gridSize, '+10');
                 // 生成新的食物
                 generateFood();
-                // 如果本次得分打破最高纪录，播放庆祝音效
-                if (!isMuted && audioContext && prevScore < bestScore && score >= bestScore) {
+                // 如果本次得分首次超过最高纪录，播放庆祝音效
+                // 修改条件：之前得分小于等于最高分，且当前得分大于最高分（首次超过）
+                if (!isMuted && audioContext && prevScore <= bestScore && score > bestScore) {
                     playCelebrateSound();
                 }
             } else {
@@ -896,6 +993,23 @@
             });
         }
         pauseButton.addEventListener('click', pauseGame);
+        // 清除最高纪录按钮事件
+        const clearRecordButton = document.getElementById('clearRecordButton');
+        if (clearRecordButton) {
+            clearRecordButton.addEventListener('click', function() {
+                // 弹出确认对话框
+                if (confirm('确定要清除最高纪录吗？这个操作不能撤销！')) {
+                    // 清除本地存储的最高分
+                    localStorage.removeItem('hungry_snake_best_score');
+                    bestScore = 0;
+                    // 更新页面上的最高分显示
+                    const bestScoreValueEl = document.getElementById('bestScoreValue');
+                    if (bestScoreValueEl) bestScoreValueEl.textContent = '0';
+                    // 弹出提示
+                    alert('最高纪录已清除！');
+                }
+            });
+        }
         // 重新开始功能合并到开始按钮文案切换，这里移除单独的按钮事件
         speedSlider.addEventListener('input', updateGameSpeed);
 
